@@ -13,8 +13,11 @@ import {
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
+  PanGestureHandlerStateChangeEvent,
+  State,
 } from 'react-native-gesture-handler';
 import Animated, {
+  add,
   and,
   block,
   clockRunning,
@@ -24,6 +27,7 @@ import Animated, {
   Easing,
   eq,
   event,
+  Extrapolate,
   greaterOrEq,
   interpolate,
   lessThan,
@@ -89,13 +93,13 @@ const runProgress = (clock: Animated.Clock) => {
 
 const interval = () => {
   const res = [];
-  let begin = Math.PI;
-  const end = Math.PI / 2;
-  const step = 0.01;
+  let begin = Math.PI / 2;
+  const end = 0;
+  const step = 0.1;
 
   while (begin > end) {
     console.log(Math.sin(begin));
-    res.push(Math.sin(begin));
+    res.push(Math.sin(begin).toPrecision(3));
     begin = begin - step;
   }
 
@@ -140,13 +144,34 @@ const IndexedBar = (
           0
         );
 
-        debug('right', right);
+        const adjustedIndex = index + 1;
+
+        const inputRange: number[] = [
+          (adjustedIndex - 1) * 24,
+          adjustedIndex * 24,
+          (adjustedIndex + 1) * 24,
+        ];
+
+        console.log(inputRange);
+
+        const outputRange: Animated.Node<number>[] = [
+          add(0, 0),
+          add(sin(Math.PI / 2), 40),
+          add(0, 0),
+        ];
+
+        const angle = interpolate(translateY, {
+          inputRange,
+          outputRange,
+          extrapolate: Extrapolate.CLAMP,
+        });
+
         return (
           <Animated.View
             key={v.title}
             style={{
               justifyContent: 'center',
-              right,
+              right: angle,
               borderWidth: 1,
             }}
           >
@@ -162,6 +187,9 @@ export default function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const translateY = useRef(new Animated.Value<number>(0)).current;
+  const offsetY = useRef(new Animated.Value<number>(0)).current;
+  const gestureState = useRef(new Animated.Value<State>(State.UNDETERMINED))
+    .current;
 
   // const clock = useRef(new Animated.Clock()).current;
   // const progress = useRef(new Animated.Value<number>(0)).current;
@@ -187,29 +215,39 @@ export default function App() {
   // );
 
   // useCode(() => debug('translateY', translateY), []);
-  const onGestureEvent = event<PanGestureHandlerGestureEvent>([
+  const onGestureEvent = event<
+    PanGestureHandlerGestureEvent | PanGestureHandlerStateChangeEvent
+  >([
     {
-      nativeEvent: {
-        translationY: translateY,
-      },
+      nativeEvent: { translationY: translateY, state: gestureState },
     },
   ]);
+
+  const transY = cond(
+    eq(gestureState, State.ACTIVE),
+    add(offsetY, translateY),
+    set(offsetY, add(offsetY, translateY))
+  );
+
   return (
     <View style={styles.container}>
-      <PanGestureHandler onGestureEvent={onGestureEvent}>
+      <PanGestureHandler
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onGestureEvent}
+      >
         <Animated.View
           style={[
             {
               zIndex: 999,
               position: 'absolute',
-              top: 0,
+              top: 20,
               right: 30,
               width: 24,
               height: 24,
               borderRadius: 12,
               backgroundColor: 'red',
             },
-            { transform: [{ translateY }] },
+            { transform: [{ translateY: transY }] },
           ]}
         />
       </PanGestureHandler>
