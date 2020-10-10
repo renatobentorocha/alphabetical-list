@@ -1,15 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
-  LayoutChangeEvent,
-  LayoutRectangle,
-  ScrollView,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { getStatusBarHeight } from 'react-native-status-bar-height';
+import React, { useRef, useState } from 'react';
+import { Dimensions, SectionList, StyleSheet, Text, View } from 'react-native';
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
@@ -28,6 +20,7 @@ import Animated, {
   eq,
   event,
   Extrapolate,
+  floor,
   greaterOrEq,
   interpolate,
   lessThan,
@@ -37,6 +30,7 @@ import Animated, {
   sin,
   startClock,
   stopClock,
+  sub,
   timing,
   useCode,
 } from 'react-native-reanimated';
@@ -45,6 +39,7 @@ import Animated, {
 // import RangeSlider, { Slider } from 'react-native-range-slider-expo';
 
 const { width, height } = Dimensions.get('window');
+const STATUS_BAR_HEIGHT = getStatusBarHeight();
 
 const range = (min: number, max: number) => {
   const res = [];
@@ -130,33 +125,24 @@ const DATA = normalize() as NormalizedCountries[];
 
 const IndexedBar = (
   data: NormalizedCountries[],
-  translateY: Animated.Value<number>
+  translateY: Animated.Node<number>
 ) => {
   return (
     <View style={{ paddingRight: 60 }}>
       {data.map((v, index) => {
-        const right = cond(
-          and(
-            greaterOrEq(divide(translateY, 24), index),
-            lessThan(divide(translateY, 24), index + 1)
-          ),
-          30,
-          0
-        );
-
-        const adjustedIndex = index + 1;
-
         const inputRange: number[] = [
-          (adjustedIndex - 1) * 24,
-          adjustedIndex * 24,
-          (adjustedIndex + 1) * 24,
+          (index - 2) * 24,
+          (index - 1) * 24,
+          index * 24,
+          (index + 1) * 24,
+          (index + 2) * 24,
         ];
-
-        console.log(inputRange);
 
         const outputRange: Animated.Node<number>[] = [
           add(0, 0),
+          add(sin(Math.PI / 10), 20),
           add(sin(Math.PI / 2), 40),
+          add(sin(Math.PI / 10), 20),
           add(0, 0),
         ];
 
@@ -172,10 +158,10 @@ const IndexedBar = (
             style={{
               justifyContent: 'center',
               right: angle,
-              borderWidth: 1,
+              marginBottom: 5,
             }}
           >
-            <Text style={[styles.header]}>{v.title}</Text>
+            <Text style={{ fontSize: 16 }}>{v.title}</Text>
           </Animated.View>
         );
       })}
@@ -186,6 +172,7 @@ const IndexedBar = (
 export default function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const pointY = useRef(new Animated.Value<number>(0)).current;
   const translateY = useRef(new Animated.Value<number>(0)).current;
   const offsetY = useRef(new Animated.Value<number>(0)).current;
   const gestureState = useRef(new Animated.Value<State>(State.UNDETERMINED))
@@ -219,13 +206,17 @@ export default function App() {
     PanGestureHandlerGestureEvent | PanGestureHandlerStateChangeEvent
   >([
     {
-      nativeEvent: { translationY: translateY, state: gestureState },
+      nativeEvent: {
+        translationY: translateY,
+        state: gestureState,
+        absoluteY: pointY,
+      },
     },
   ]);
 
   const transY = cond(
     eq(gestureState, State.ACTIVE),
-    add(offsetY, translateY),
+    [add(offsetY, translateY)],
     set(offsetY, add(offsetY, translateY))
   );
 
@@ -240,11 +231,11 @@ export default function App() {
             {
               zIndex: 999,
               position: 'absolute',
-              top: 20,
+              top: getStatusBarHeight(),
               right: 30,
-              width: 24,
-              height: 24,
-              borderRadius: 12,
+              width: 21,
+              height: 21,
+              borderRadius: 21 / 2,
               backgroundColor: 'red',
             },
             { transform: [{ translateY: transY }] },
@@ -264,7 +255,7 @@ export default function App() {
           <Text style={styles.header}>{title}</Text>
         )}
       />
-      {IndexedBar(DATA, translateY)}
+      {IndexedBar(DATA, transY)}
       <StatusBar style="auto" />
     </View>
   );
@@ -276,6 +267,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     justifyContent: 'center',
+    paddingVertical: getStatusBarHeight(),
   },
   item: {
     backgroundColor: '#f9c2ff',
