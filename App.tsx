@@ -12,6 +12,7 @@ import Animated, {
   add,
   and,
   block,
+  call,
   clockRunning,
   cond,
   debug,
@@ -25,7 +26,9 @@ import Animated, {
   interpolate,
   lessThan,
   multiply,
+  onChange,
   or,
+  round,
   set,
   sin,
   startClock,
@@ -35,71 +38,8 @@ import Animated, {
   useCode,
 } from 'react-native-reanimated';
 
-// import Slider from '@react-native-community/slider';
-// import RangeSlider, { Slider } from 'react-native-range-slider-expo';
-
 const { width, height } = Dimensions.get('window');
 const STATUS_BAR_HEIGHT = getStatusBarHeight();
-
-const range = (min: number, max: number) => {
-  const res = [];
-  for (let index = min; index <= max; index++) res.push(index);
-
-  return res;
-};
-
-// console.log('Math.PI = ', Math.PI);
-// console.log('Math.PI / 2 = ', Math.PI / 2);
-// console.log('2 * Math.PI = ', 2 * Math.PI);
-
-// console.log('###################');
-// console.log('###################');
-
-// console.log('Math.sin(Math.PI) = ', Math.sin(Math.PI));
-// console.log('Math.PI / 2 = ', Math.sin(Math.PI / 2));
-// console.log('Math.sin(2 * Math.PI) = ', Math.sin(2 * Math.PI));
-
-const runProgress = (clock: Animated.Clock) => {
-  const state: Animated.TimingState = {
-    finished: new Animated.Value(0),
-    frameTime: new Animated.Value(0),
-    time: new Animated.Value(0),
-    position: new Animated.Value(0),
-  };
-
-  const config: Animated.TimingConfig = {
-    duration: 2000,
-    toValue: new Animated.Value(1),
-    easing: Easing.inOut(Easing.linear),
-  };
-
-  return block([
-    timing(clock, state, config),
-    cond(state.finished, [
-      stopClock(clock),
-      set(state.finished, 0),
-      set(state.frameTime, 0),
-      set(state.time, 0),
-      // set(state.position, 0),
-    ]),
-    state.position,
-  ]);
-};
-
-const interval = () => {
-  const res = [];
-  let begin = Math.PI / 2;
-  const end = 0;
-  const step = 0.1;
-
-  while (begin > end) {
-    console.log(Math.sin(begin));
-    res.push(Math.sin(begin).toPrecision(3));
-    begin = begin - step;
-  }
-
-  return res;
-};
 
 import countries from './countries';
 
@@ -109,7 +49,7 @@ type NormalizedCountries = {
 };
 
 const normalize = () =>
-  countries.reduce((prev, curr, index) => {
+  countries.reduce((prev, curr) => {
     const prevIndex = prev.findIndex((v) => v.title === curr.Name[0]);
 
     if (prevIndex >= 0) {
@@ -128,7 +68,7 @@ const IndexedBar = (
   translateY: Animated.Node<number>
 ) => {
   return (
-    <View style={{ paddingRight: 60 }}>
+    <View style={{ marginLeft: 20, paddingRight: 50 }}>
       {data.map((v, index) => {
         const inputRange: number[] = [
           (index - 2) * 24,
@@ -170,38 +110,15 @@ const IndexedBar = (
 };
 
 export default function App() {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
   const pointY = useRef(new Animated.Value<number>(0)).current;
   const translateY = useRef(new Animated.Value<number>(0)).current;
   const offsetY = useRef(new Animated.Value<number>(0)).current;
   const gestureState = useRef(new Animated.Value<State>(State.UNDETERMINED))
     .current;
+  const sectionIndex = useRef(new Animated.Value<number>(0)).current;
 
-  // const clock = useRef(new Animated.Clock()).current;
-  // const progress = useRef(new Animated.Value<number>(0)).current;
+  const listRef = useRef<SectionList>();
 
-  // const [positions, setPositions] = useState<LayoutRectangle[]>([]);
-
-  // const animatedSin = interpolate(progress, {
-  //   inputRange: [0, 0.5, 1],
-  //   outputRange: [
-  //     sin(Math.PI),
-  //     sin(divide(Math.PI, 2)),
-  //     sin(multiply(2, Math.PI)),
-  //   ],
-  // });
-
-  // useCode(
-  //   () =>
-  //     block([
-  //       startClock(clock),
-  //       cond(clockRunning(clock), set(progress, runProgress(clock))),
-  //     ]),
-  //   []
-  // );
-
-  // useCode(() => debug('translateY', translateY), []);
   const onGestureEvent = event<
     PanGestureHandlerGestureEvent | PanGestureHandlerStateChangeEvent
   >([
@@ -214,12 +131,33 @@ export default function App() {
     },
   ]);
 
+  const translateTo = (sectionIndex: number) => {
+    listRef.current?.scrollToLocation({
+      itemIndex: 0,
+      sectionIndex,
+      animated: true,
+    });
+  };
+
+  useCode(
+    () =>
+      onChange(
+        gestureState,
+        cond(eq(gestureState, State.END), [
+          set(sectionIndex, round(divide(transY, 24))),
+          call([sectionIndex], translateTo),
+        ])
+      ),
+    []
+  );
+
   const transY = cond(
     eq(gestureState, State.ACTIVE),
     [add(offsetY, translateY)],
     set(offsetY, add(offsetY, translateY))
   );
 
+  // console.log(DATA.length);
   return (
     <View style={styles.container}>
       <PanGestureHandler
@@ -232,7 +170,7 @@ export default function App() {
               zIndex: 999,
               position: 'absolute',
               top: getStatusBarHeight(),
-              right: 30,
+              right: 20,
               width: 21,
               height: 21,
               borderRadius: 21 / 2,
@@ -244,6 +182,22 @@ export default function App() {
       </PanGestureHandler>
 
       <SectionList
+        // onSczrollToIndexFailed={(info) => console.log(info)}
+        getItemLayout={(data, index) => {
+          if (data[index])
+            return {
+              length: 40,
+              offset: 40 * index,
+              index,
+            };
+
+          return {
+            length: 50,
+            offset: 50 * index,
+            index,
+          };
+        }}
+        ref={listRef}
         sections={DATA}
         keyExtractor={(item, index) => item + index}
         renderItem={({ item }) => (
@@ -251,8 +205,11 @@ export default function App() {
             <Text style={styles.title}>{item}</Text>
           </View>
         )}
+        // ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.header}>{title}</Text>
+          <View style={{ height: 40 }}>
+            <Text style={styles.header}>{title}</Text>
+          </View>
         )}
       />
       {IndexedBar(DATA, transY)}
@@ -265,20 +222,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgb(54, 69, 143)',
     justifyContent: 'center',
     paddingVertical: getStatusBarHeight(),
   },
   item: {
-    backgroundColor: '#f9c2ff',
-    padding: 20,
-    marginVertical: 8,
+    backgroundColor: 'rgb(242, 244, 250)',
+    height: 40,
+    justifyContent: 'center',
+    marginBottom: 10,
   },
   header: {
-    fontSize: 18,
+    fontSize: 25,
     backgroundColor: 'transparent',
+    color: 'rgb(205, 209, 217)',
+    marginLeft: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 17,
   },
 });
