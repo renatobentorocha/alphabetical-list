@@ -48,6 +48,11 @@ type NormalizedCountries = {
   data: string[];
 };
 
+enum RowType {
+  SECTION_HEADER,
+  SECTION_DATA,
+}
+
 const normalize = () =>
   countries.reduce((prev, curr) => {
     const prevIndex = prev.findIndex((v) => v.title === curr.Name[0]);
@@ -62,6 +67,20 @@ const normalize = () =>
   }, []);
 
 const DATA = normalize() as NormalizedCountries[];
+
+// const flattedData: RowType[] = [];
+
+// for (let index = 0; index < DATA.length; index++) {
+//   flattedData.push(RowType.SECTION_HEADER);
+//   flattedData.push(...DATA[index].data.map((_) => RowType.SECTION_DATA));
+// }
+
+const flattedData = DATA.map((v) => [
+  RowType.SECTION_HEADER,
+  ...v.data.map((_) => RowType.SECTION_DATA),
+]).flat();
+
+console.log(flattedData.length);
 
 const IndexedBar = (
   data: NormalizedCountries[],
@@ -182,14 +201,17 @@ export default function App() {
       </PanGestureHandler>
 
       <SectionList
-        // onSczrollToIndexFailed={(info) => console.log(info)}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={flattedData.length * 2}
+        onScrollToIndexFailed={(info) => console.log(info)}
         getItemLayout={(data, index) => {
-          if (data[index])
+          if (flattedData[index] === RowType.SECTION_HEADER) {
             return {
               length: 40,
               offset: 40 * index,
               index,
             };
+          }
 
           return {
             length: 50,
@@ -202,10 +224,12 @@ export default function App() {
         keyExtractor={(item, index) => item + index}
         renderItem={({ item }) => (
           <View style={styles.item}>
-            <Text style={styles.title}>{item}</Text>
+            <Text numberOfLines={1} style={styles.title}>
+              {item}
+            </Text>
           </View>
         )}
-        // ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderSectionHeader={({ section: { title } }) => (
           <View style={{ height: 40 }}>
             <Text style={styles.header}>{title}</Text>
@@ -230,7 +254,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(242, 244, 250)',
     height: 40,
     justifyContent: 'center',
-    marginBottom: 10,
   },
   header: {
     fontSize: 25,
@@ -240,5 +263,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
+    marginLeft: 20,
   },
 });
