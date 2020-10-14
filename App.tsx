@@ -32,6 +32,8 @@ import countries from './countries';
 
 const { width } = Dimensions.get('window');
 
+const MAX_SCALE = 1.7;
+
 const scaleWithWidth = (size: number) =>
   scale({ origin_size: WIDTH_ORIGIN, destination_size: width, size });
 
@@ -78,22 +80,22 @@ const IndexedBar = (
     >
       {data.map((v, index) => {
         const inputRange: number[] = [
-          (index - 3) * scaleWithWidth(23.2),
-          (index - 2) * scaleWithWidth(23.2),
-          (index - 1) * scaleWithWidth(23.2),
-          index * scaleWithWidth(23.2),
-          (index + 1) * scaleWithWidth(23.2),
-          (index + 2) * scaleWithWidth(23.2),
-          (index + 3) * scaleWithWidth(23.2),
+          (index - 3) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          (index - 2) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          (index - 1) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          index * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          (index + 1) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          (index + 2) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
+          (index + 3) * Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE),
         ];
 
         const outputRange: Animated.Node<number>[] = [
           add(0, 0),
-          add(sin(Math.PI / 15), scaleWithWidth(10)),
-          add(sin(Math.PI / 10), scaleWithWidth(20)),
-          add(sin(Math.PI / 2), scaleWithWidth(40)),
-          add(sin(Math.PI / 10), scaleWithWidth(20)),
-          add(sin(Math.PI / 15), scaleWithWidth(10)),
+          add(sin(Math.PI / 15), Math.min(scaleWithWidth(10), 10 * MAX_SCALE)),
+          add(sin(Math.PI / 10), Math.min(scaleWithWidth(20), 20 * MAX_SCALE)),
+          add(sin(Math.PI / 2), Math.min(scaleWithWidth(40), 40 * MAX_SCALE)),
+          add(sin(Math.PI / 10), Math.min(scaleWithWidth(20), 20 * MAX_SCALE)),
+          add(sin(Math.PI / 15), Math.min(scaleWithWidth(10), 10 * MAX_SCALE)),
           add(0, 0),
         ];
 
@@ -117,13 +119,13 @@ const IndexedBar = (
             style={{
               justifyContent: 'center',
               right: angle,
-              marginBottom: scaleWithWidth(6),
+              marginBottom: Math.min(scaleWithWidth(6), 6 * MAX_SCALE),
             }}
           >
             <Animated.Text
               style={[
                 {
-                  fontSize: scaleWithWidth(14),
+                  fontSize: Math.min(scaleWithWidth(14), 14 * MAX_SCALE),
                   color: '#DBBF69',
                   fontWeight: '500',
                 },
@@ -174,7 +176,12 @@ export default function App() {
       onChange(
         gestureState,
         cond(eq(gestureState, State.END), [
-          set(sectionIndex, round(divide(transY, scaleWithWidth(23.2)))),
+          set(
+            sectionIndex,
+            round(
+              divide(transY, Math.min(scaleWithWidth(23.2), 23.2 * MAX_SCALE))
+            )
+          ),
           call([sectionIndex], translateTo),
         ])
       ),
@@ -200,9 +207,9 @@ export default function App() {
               position: 'absolute',
               top: getStatusBarHeight() + scaleWithWidth(18),
               right: scaleWithWidth(20),
-              width: scaleWithWidth(21),
-              height: scaleWithWidth(21),
-              borderRadius: scaleWithWidth(21) / 2,
+              width: Math.min(scaleWithWidth(21), 21 * MAX_SCALE),
+              height: Math.min(scaleWithWidth(21), 21 * MAX_SCALE),
+              borderRadius: Math.min(scaleWithWidth(21), 21 * MAX_SCALE) / 2,
               backgroundColor: '#8F7936',
             },
             { transform: [{ translateY: transY }] },
