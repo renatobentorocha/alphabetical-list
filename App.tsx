@@ -26,13 +26,11 @@ import Animated, {
   useCode,
 } from 'react-native-reanimated';
 
-import { scale, WIDTH_ORIGIN, HEIGHT_ORIGIN } from './utils';
+import { scale, WIDTH_ORIGIN } from './utils';
 
 import countries from './countries';
 
-const { width, height } = Dimensions.get('window');
-
-const STATUS_BAR_HEIGHT = getStatusBarHeight();
+const { width } = Dimensions.get('window');
 
 const scaleWithWidth = (size: number) =>
   scale({ origin_size: WIDTH_ORIGIN, destination_size: width, size });
