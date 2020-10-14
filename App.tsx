@@ -1,47 +1,41 @@
 import { StatusBar } from 'expo-status-bar';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Dimensions, SectionList, StyleSheet, Text, View } from 'react-native';
+
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
   PanGestureHandlerStateChangeEvent,
   State,
 } from 'react-native-gesture-handler';
+
 import Animated, {
   add,
-  and,
-  block,
   call,
-  clockRunning,
   cond,
-  debug,
   divide,
-  Easing,
   eq,
   event,
   Extrapolate,
-  floor,
-  greaterOrEq,
   interpolate,
-  lessThan,
-  multiply,
   onChange,
-  or,
   round,
   set,
   sin,
-  startClock,
-  stopClock,
-  sub,
-  timing,
   useCode,
 } from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
-const STATUS_BAR_HEIGHT = getStatusBarHeight();
+import { scale, WIDTH_ORIGIN, HEIGHT_ORIGIN } from './utils';
 
 import countries from './countries';
+
+const { width, height } = Dimensions.get('window');
+
+const STATUS_BAR_HEIGHT = getStatusBarHeight();
+
+const scaleWithWidth = (size: number) =>
+  scale({ origin_size: WIDTH_ORIGIN, destination_size: width, size });
 
 type NormalizedCountries = {
   title: string;
@@ -73,32 +67,35 @@ const flattedData = DATA.map((v) => [
   ...v.data.map((_) => RowType.SECTION_DATA),
 ]).flat();
 
-console.log(flattedData.length);
-
 const IndexedBar = (
   data: NormalizedCountries[],
   translateY: Animated.Node<number>
 ) => {
   return (
-    <View style={{ marginLeft: 20, paddingRight: 50 }}>
+    <View
+      style={{
+        marginLeft: scaleWithWidth(20),
+        paddingRight: scaleWithWidth(50),
+      }}
+    >
       {data.map((v, index) => {
         const inputRange: number[] = [
-          (index - 3) * 24,
-          (index - 2) * 24,
-          (index - 1) * 24,
-          index * 24,
-          (index + 1) * 24,
-          (index + 2) * 24,
-          (index + 3) * 24,
+          (index - 3) * scaleWithWidth(23.2),
+          (index - 2) * scaleWithWidth(23.2),
+          (index - 1) * scaleWithWidth(23.2),
+          index * scaleWithWidth(23.2),
+          (index + 1) * scaleWithWidth(23.2),
+          (index + 2) * scaleWithWidth(23.2),
+          (index + 3) * scaleWithWidth(23.2),
         ];
 
         const outputRange: Animated.Node<number>[] = [
           add(0, 0),
-          add(sin(Math.PI / 15), 10),
-          add(sin(Math.PI / 10), 20),
-          add(sin(Math.PI / 2), 40),
-          add(sin(Math.PI / 10), 20),
-          add(sin(Math.PI / 15), 10),
+          add(sin(Math.PI / 15), scaleWithWidth(10)),
+          add(sin(Math.PI / 10), scaleWithWidth(20)),
+          add(sin(Math.PI / 2), scaleWithWidth(40)),
+          add(sin(Math.PI / 10), scaleWithWidth(20)),
+          add(sin(Math.PI / 15), scaleWithWidth(10)),
           add(0, 0),
         ];
 
@@ -122,12 +119,16 @@ const IndexedBar = (
             style={{
               justifyContent: 'center',
               right: angle,
-              marginBottom: 5,
+              marginBottom: scaleWithWidth(6),
             }}
           >
             <Animated.Text
               style={[
-                { fontSize: 16, color: '#DBBF69', fontWeight: '500' },
+                {
+                  fontSize: scaleWithWidth(14),
+                  color: '#DBBF69',
+                  fontWeight: '500',
+                },
                 { transform: [{ scale }] },
               ]}
             >
@@ -175,7 +176,7 @@ export default function App() {
       onChange(
         gestureState,
         cond(eq(gestureState, State.END), [
-          set(sectionIndex, round(divide(transY, 24))),
+          set(sectionIndex, round(divide(transY, scaleWithWidth(23.2)))),
           call([sectionIndex], translateTo),
         ])
       ),
@@ -199,11 +200,11 @@ export default function App() {
             {
               zIndex: 999,
               position: 'absolute',
-              top: getStatusBarHeight(),
-              right: 20,
-              width: 21,
-              height: 21,
-              borderRadius: 21 / 2,
+              top: getStatusBarHeight() + scaleWithWidth(18),
+              right: scaleWithWidth(20),
+              width: scaleWithWidth(21),
+              height: scaleWithWidth(21),
+              borderRadius: scaleWithWidth(21) / 2,
               backgroundColor: '#8F7936',
             },
             { transform: [{ translateY: transY }] },
@@ -213,20 +214,20 @@ export default function App() {
 
       <SectionList
         showsVerticalScrollIndicator={false}
-        initialNumToRender={flattedData.length * 2}
+        initialNumToRender={flattedData.length * 1.5}
         onScrollToIndexFailed={(info) => console.log(info)}
         getItemLayout={(data, index) => {
           if (flattedData[index] === RowType.SECTION_HEADER) {
             return {
-              length: 40,
-              offset: 40 * index,
+              length: scaleWithWidth(40),
+              offset: scaleWithWidth(40) * index,
               index,
             };
           }
 
           return {
-            length: 50,
-            offset: 50 * index,
+            length: scaleWithWidth(50),
+            offset: scaleWithWidth(50) * index,
             index,
           };
         }}
@@ -240,9 +241,11 @@ export default function App() {
             </Text>
           </View>
         )}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: scaleWithWidth(10) }} />
+        )}
         renderSectionHeader={({ section: { title } }) => (
-          <View style={{ height: 40 }}>
+          <View style={{ height: scaleWithWidth(40) }}>
             <Text style={styles.header}>{title}</Text>
           </View>
         )}
@@ -259,22 +262,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#36458f',
     justifyContent: 'center',
-    paddingVertical: getStatusBarHeight(),
+    paddingVertical: getStatusBarHeight() + scaleWithWidth(20),
   },
   item: {
     backgroundColor: '#697CDB',
-    height: 40,
+    height: scaleWithWidth(40),
     justifyContent: 'center',
   },
   header: {
-    fontSize: 25,
+    fontSize: scaleWithWidth(25),
     backgroundColor: 'transparent',
     color: '#DBBF69',
-    marginLeft: 20,
+    marginLeft: scaleWithWidth(20),
   },
   title: {
-    fontSize: 17,
-    marginLeft: 20,
+    fontSize: scaleWithWidth(17),
+    marginLeft: scaleWithWidth(20),
     color: '#f5f5f5',
   },
 });
