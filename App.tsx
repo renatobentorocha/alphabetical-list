@@ -83,24 +83,36 @@ const IndexedBar = (
     <View style={{ marginLeft: 20, paddingRight: 50 }}>
       {data.map((v, index) => {
         const inputRange: number[] = [
+          (index - 3) * 24,
           (index - 2) * 24,
           (index - 1) * 24,
           index * 24,
           (index + 1) * 24,
           (index + 2) * 24,
+          (index + 3) * 24,
         ];
 
         const outputRange: Animated.Node<number>[] = [
           add(0, 0),
+          add(sin(Math.PI / 15), 10),
           add(sin(Math.PI / 10), 20),
           add(sin(Math.PI / 2), 40),
           add(sin(Math.PI / 10), 20),
+          add(sin(Math.PI / 15), 10),
           add(0, 0),
         ];
+
+        const outputRangeScale: number[] = [1, 1.1, 1.2, 1.5, 1.2, 1.1, 1];
 
         const angle = interpolate(translateY, {
           inputRange,
           outputRange,
+          extrapolate: Extrapolate.CLAMP,
+        });
+
+        const scale = interpolate(translateY, {
+          inputRange,
+          outputRange: outputRangeScale,
           extrapolate: Extrapolate.CLAMP,
         });
 
@@ -113,11 +125,14 @@ const IndexedBar = (
               marginBottom: 5,
             }}
           >
-            <Text
-              style={{ fontSize: 16, color: '#DBBF69', fontWeight: 'bold' }}
+            <Animated.Text
+              style={[
+                { fontSize: 16, color: '#DBBF69', fontWeight: '500' },
+                { transform: [{ scale }] },
+              ]}
             >
               {v.title}
-            </Text>
+            </Animated.Text>
           </Animated.View>
         );
       })}
@@ -173,7 +188,6 @@ export default function App() {
     set(offsetY, add(offsetY, translateY))
   );
 
-  // console.log(DATA.length);
   return (
     <View style={styles.container}>
       <PanGestureHandler
