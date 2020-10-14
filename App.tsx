@@ -68,13 +68,6 @@ const normalize = () =>
 
 const DATA = normalize() as NormalizedCountries[];
 
-// const flattedData: RowType[] = [];
-
-// for (let index = 0; index < DATA.length; index++) {
-//   flattedData.push(RowType.SECTION_HEADER);
-//   flattedData.push(...DATA[index].data.map((_) => RowType.SECTION_DATA));
-// }
-
 const flattedData = DATA.map((v) => [
   RowType.SECTION_HEADER,
   ...v.data.map((_) => RowType.SECTION_DATA),
@@ -120,7 +113,11 @@ const IndexedBar = (
               marginBottom: 5,
             }}
           >
-            <Text style={{ fontSize: 16 }}>{v.title}</Text>
+            <Text
+              style={{ fontSize: 16, color: '#DBBF69', fontWeight: 'bold' }}
+            >
+              {v.title}
+            </Text>
           </Animated.View>
         );
       })}
@@ -193,7 +190,7 @@ export default function App() {
               width: 21,
               height: 21,
               borderRadius: 21 / 2,
-              backgroundColor: 'red',
+              backgroundColor: '#8F7936',
             },
             { transform: [{ translateY: transY }] },
           ]}
@@ -246,23 +243,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: 'rgb(54, 69, 143)',
+    backgroundColor: '#36458f',
     justifyContent: 'center',
     paddingVertical: getStatusBarHeight(),
   },
   item: {
-    backgroundColor: 'rgb(242, 244, 250)',
+    backgroundColor: '#697CDB',
     height: 40,
     justifyContent: 'center',
   },
   header: {
     fontSize: 25,
     backgroundColor: 'transparent',
-    color: 'rgb(205, 209, 217)',
+    color: '#DBBF69',
     marginLeft: 20,
   },
   title: {
     fontSize: 17,
     marginLeft: 20,
+    color: '#f5f5f5',
   },
 });
