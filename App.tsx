@@ -19,6 +19,7 @@ import Animated, {
   event,
   Extrapolate,
   interpolate,
+  multiply,
   onChange,
   round,
   set,
@@ -67,12 +68,15 @@ const flattedData = DATA.map((v) => [
   ...v.data.map((_) => RowType.SECTION_DATA),
 ]).flat();
 
-const IndexedBar = (
-  data: NormalizedCountries[],
-  translateY: Animated.Node<number>
-) => {
+function IndexedBar({
+  data,
+  translateY,
+}: {
+  data: NormalizedCountries[];
+  translateY: Animated.Node<number>;
+}) {
   return (
-    <View
+    <Animated.View
       style={{
         marginLeft: scaleWithWidth(20),
         paddingRight: scaleWithWidth(50),
@@ -116,11 +120,13 @@ const IndexedBar = (
         return (
           <Animated.View
             key={v.title}
-            style={{
-              justifyContent: 'center',
-              right: angle,
-              marginBottom: Math.min(scaleWithWidth(6), 6 * MAX_SCALE),
-            }}
+            style={[
+              {
+                justifyContent: 'center',
+                marginBottom: Math.min(scaleWithWidth(6), 6 * MAX_SCALE),
+              },
+              { transform: [{ translateX: multiply(angle, -1) }] },
+            ]}
           >
             <Animated.Text
               style={[
@@ -137,9 +143,9 @@ const IndexedBar = (
           </Animated.View>
         );
       })}
-    </View>
+    </Animated.View>
   );
-};
+}
 
 export default function App() {
   const pointY = useRef(new Animated.Value<number>(0)).current;
@@ -167,7 +173,6 @@ export default function App() {
     listRef.current?.scrollToLocation({
       itemIndex: 0,
       sectionIndex,
-      animated: true,
     });
   };
 
@@ -220,7 +225,6 @@ export default function App() {
       <SectionList
         showsVerticalScrollIndicator={false}
         initialNumToRender={flattedData.length * 1.5}
-        onScrollToIndexFailed={(info) => console.log(info)}
         getItemLayout={(data, index) => {
           if (flattedData[index] === RowType.SECTION_HEADER) {
             return {
@@ -255,7 +259,7 @@ export default function App() {
           </View>
         )}
       />
-      {IndexedBar(DATA, transY)}
+      <IndexedBar data={DATA} translateY={transY} />
       <StatusBar style="auto" />
     </View>
   );
